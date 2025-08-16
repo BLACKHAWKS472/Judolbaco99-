@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angkot bacot99+</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* --- GLOBAL THEME --- */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0d0d0d;
+  color: #f2f2f2;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; cursor:pointer; }
+
+/* LOGIN PAGE */
+#login-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg,#000,#111,#0a0a0a);
+}
+.login-box {
+  background: rgba(20,20,20,0.9);
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 25px #00ffcc;
+}
+.login-box h1 {
+  color:#00ffcc;
+  margin-bottom:20px;
+  text-shadow:0 0 10px #00ffcc;
+}
+.login-box input, .login-box button {
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border:none;
+  border-radius:6px;
+}
+.login-box input {background:#1a1a1a;color:#fff;}
+.login-box button {
+  background:#00ffcc;color:#000;font-weight:bold;cursor:pointer;transition:0.3s;
+}
+.login-box button:hover {background:#ffcc00;box-shadow:0 0 15px #ffcc00;}
+
+#loading-chip {
+  display:none;margin:20px auto 0;width:50px;height:50px;
+  border:6px solid #00ffcc;border-top:6px solid #ffcc00;border-radius:50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* LOGIN POPUP */
+#login-popup {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #222; color: #fff; padding: 15px 25px; border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6); display: flex; align-items: center;
+  gap: 10px; opacity: 0; pointer-events: none;
+}
+#login-popup.show { animation: slideFade 0.6s forwards; }
+#login-popup.hide { animation: slideFadeOut 0.6s forwards; }
+#login-popup svg { width: 24px; height: 24px; }
+
+@keyframes slideFade {
+  from {opacity:0; transform:translate(-50%,-20px);}
+  to {opacity:1; transform:translate(-50%,0);}
+}
+@keyframes slideFadeOut {
+  from {opacity:1; transform:translate(-50%,0);}
+  to {opacity:0; transform:translate(-50%,-20px);}
+}
+
+/* PANEL */
+#panel{display:none;}
+header {
+  background:#111;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #00ffcc;
+}
+header h2 {color:#ffcc00;text-shadow:0 0 10px #ffcc00;display:flex;align-items:center;gap:8px;}
+header .toggle-btn{font-size:22px;cursor:pointer;color:#00ffcc;}
+
+/* SIDEBAR */
+.sidebar {
+  position:fixed; left:-260px; top:0; width:240px; height:100%;
+  background:#111; padding-top:60px;
+  box-shadow:3px 0 10px rgba(0,0,0,0.5);
+  transition:left 0.4s ease, opacity 0.4s ease;
+  z-index:10; opacity:0;
+}
+.sidebar.active{left:0; opacity:1;}
+.sidebar a {
+  display:flex;align-items:center;gap:10px;padding:15px 20px;color:#fff;
+  border-bottom:1px solid #222;transition:0.3s;
+}
+.sidebar a:hover {background:#00ffcc;color:#000;font-weight:bold;text-shadow:0 0 10px #ffcc00;}
+
+.main {margin-left:0;padding:20px;transition:margin-left 0.4s ease;}
+.sidebar.active ~ .main{margin-left:240px;}
+
+.card {
+  background:#1a1a1a;padding:20px;border-radius:12px;margin-bottom:20px;
+  box-shadow:0 0 15px rgba(0,255,204,0.3);
+  animation: fadeSlide 0.6s ease;
+}
+.card h3{margin-top:0;color:#ffcc00;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:10px;border:1px solid #333;text-align:center;}
+th{background:#00ffcc;color:#000;}
+.fade-in{animation:fadeIn 1s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ICONS */
+.icon {width:18px;height:18px;fill:currentColor;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-page">
+  <div class="login-box fade-in">
+    <h1 class="glow">Login panel</h1>
+    <input type="text" id="user" placeholder="Username">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <div id="loading-chip"></div>
+  </div>
+</div>
+
+<!-- LOGIN POPUP -->
+<div id="login-popup"></div>
+
+<!-- PANEL -->
+<div id="panel">
+  <header>
+    <span class="toggle-btn" onclick="toggleSidebar()">☰</span>
+    <h2>Angkot baco99+</h2>
+    <span>
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg> Admin
+    </span>
+  </header>
+
+  <div class="sidebar" id="sidebar">
+    <a onclick="switchPage('dashboard')"><svg class="icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg> Dashboard</a>
+    <a onclick="switchPage('member')"><svg class="icon" viewBox="0 0 24 24"><path d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3 1.3 3 3 3zm-8 0c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3zm0 2c-2.3 0-7 1.2-7 3.5V21h14v-4.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.7 0-1 .1 1.2.9 2 2.1 2 3.4V21h6v-2.5c0-2.3-4.7-3.5-7-3.5z"/></svg> Member</a>
+    <a onclick="switchPage('transaksi')"><svg class="icon" viewBox="0 0 24 24"><path d="M20 4H4v16h16V4zM4 2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/></svg> Transaksi</a>
+    <a onclick="switchPage('games')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16v12H4V6zm2 2v8h12V8H6z"/></svg> Games</a>
+    <a onclick="switchPage('report')"><svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 8h14v-2H7v2zm0-4h14v-2H7v2zm0-6v2h14V7H7z"/></svg> Report</a>
+    <a onclick="switchPage('setting')"><svg class="icon" viewBox="0 0 24 24"><path d="M19.4 12.9c.04-.3.1-.6.1-.9s-.06-.6-.1-.9l2.1-1.6c.2-.2.2-.5.1-.7l-2-3.4c-.1-.2-.4-.3-.6-.2l-2.5 1c-.5-.4-1-.7-1.6-.9l-.4-2.7C14.3 3.1 14.1 3 14 3h-4c-.1 0-.3.1-.3.2l-.4 2.7c-.6.2-1.1.5-1.6.9l-2.5-1c-.2-.1-.5 0-.6.2l-2 3.4c-.1.2 0 .5.1.7l2.1 1.6c-.1.3-.1.6-.1.9s0 .6.1.9l-2.1 1.6c-.2.2-.2.5-.1.7l2 3.4c.1.2.4.3.6.2l2.5-1c.5.4 1 .7 1.6.9l.4 2.7c0 .1.2.2.3.2h4c.1 0 .3-.1.3-.2l.4-2.7c.6-.2 1.1-.5 1.6-.9l2.5 1c.2.1.5 0 .6-.2l2-3.4c.1-.2.1-.5-.1-.7l-2.1-1.6zM12 15.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 8.5 12 8.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/></svg> Setting</a>
+  </div>
+
+  <div class="main fade-in">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="card"><h3>Statistik Hari Ini</h3>
+        <p>Member Aktif: 120</p>
+        <p>Total Deposit: Rp 10.500.000</p>
+        <p>Total Withdraw: Rp 7.200.000</p>
+      </div>
+      <div class="card"><h3>Grafik Deposit vs Withdraw</h3><canvas id="chart1"></canvas></div>
+      <div class="card"><h3>Grafik Profit Harian</h3><canvas id="chart2"></canvas></div>
+    </div>
+
+    <!-- MEMBER -->
+    <div id="page-member" class="page" style="display:none;">
+      <div class="card"><h3>Daftar Member</h3>
+        <table>
+          <tr><th>Username</th><th>Status</th><th>Saldo</th></tr>
+          <tr><td>player01</td><td>Aktif</td><td>Rp 500.000</td></tr>
+          <tr><td>player02</td><td>Nonaktif</td><td>Rp 0</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRANSAKSI -->
+    <div id="page-transaksi" class="page" style="display:none;">
+      <div class="card"><h3>Transaksi Terakhir</h3>
+        <p>player01 deposit Rp 200.000</p>
+        <p>player02 withdraw Rp 150.000</p>
+      </div>
+    </div>
+
+    <!-- GAMES -->
+    <div id="page-games" class="page" style="display:none;">
+      <div class="card"><h3>Game List</h3>
+        <p>Dice</p><p>Poker</p><p>Slot</p>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div id="page-report" class="page" style="display:none;">
+      <div class="card"><h3>Laporan Mingguan</h3>
+        <p>Total Transaksi: 350</p>
+        <p>Profit: Rp 12.000.000</p>
+      </div>
+    </div>
+
+    <!-- SETTING -->
+    <div id="page-setting" class="page" style="display:none;">
+      <div class="card"><h3>Pengaturan</h3>
+        <p>Ganti Password</p>
+        <p>Mode Gelap</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPopup(type, message){
+  let popup = document.getElementById("login-popup");
+  let icon = "";
+  if(type==="error"){
+    icon = `<svg viewBox="0 0 24 24" fill="red"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+  } else {
+    icon = `<svg viewBox="0 0 24 24" fill="lime"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 12-12-1.5-1.5z"/></svg>`;
+  }
+  popup.innerHTML = icon + "<span>"+message+"</span>";
+  popup.className = "show";
+  setTimeout(()=>{ popup.className="hide"; },2000);
+}
+
+function login(){
+  let u=document.getElementById("user").value;
+  let p=document.getElementById("pass").value;
+  if(u&&p){
+    showPopup("success","Successfully");
+    document.getElementById("loading-chip").style.display="block";
+    setTimeout(()=>{
+      document.getElementById("login-page").style.display="none";
+      document.getElementById("panel").style.display="block";
+      loadCharts();
+    },2000);
+  } else {
+    showPopup("error","Please enter your user and pass");
+  }
+}
+
+function toggleSidebar(){
+  document.getElementById("sidebar").classList.toggle("active");
+}
+
+function switchPage(page){
+  document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+  document.getElementById("page-"+page).style.display="block";
+}
+
+function loadCharts(){
+  new Chart(document.getElementById("chart1"),{
+    type:'bar',
+    data:{
+      labels:["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"],
+      datasets:[
+        {label:"Deposit",data:[1500,2000,1800,2200,2400,2600,3000],backgroundColor:"#00ffcc"},
+        {label:"Withdraw",data:[800,1200,1000,1500,1700,1800,2000],backgroundColor:"#ffcc00"}
+      ]
+    },
+    options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+
+  new Chart(document.getElementById("chart2"),{
+    type:'line',
+    data:{
+      labels:["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"],
+      datasets:[{label:"Profit",data:[700,800,900,1000,1200,1500,1800],
+        borderColor:"#00ffcc",backgroundColor:"rgba(0,255,204,0.2)",fill:true,tension:0.3}]
+    },
+    options:{plugins:{legend:{labels:{color:"#fff"}}},scales:{x:{ticks:{color:"#fff"}},y:{ticks:{color:"#fff"}}}}
+  });
+}
+</script>
+
+</body>
+</html>
